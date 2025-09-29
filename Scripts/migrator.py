@@ -5,13 +5,35 @@ from psycopg2.extras import execute_values
 from django.conf import settings
 
 # Database connection details (should match Django settings)
+import os
+import psycopg2
+from dotenv import load_dotenv
+
+# Load env file
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
+
 DB_CONFIG = {
-    "dbname": "credit_approval",
-    "user": "root",
-    "password": "1111",
-    "host": "localhost",
-    "port": "5433"
+    "dbname": os.getenv("POSTGRES_DB", "credit_approval"),
+    "user": os.getenv("POSTGRES_USER", "root"),
+    "password": os.getenv("POSTGRES_PASSWORD", "1111"),
+    "host": os.getenv("POSTGRES_HOST", "db"),  # use Docker service name
+    "port": os.getenv("POSTGRES_PORT", "5432"),
 }
+
+def run_ingestion():
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur = conn.cursor()
+
+    # your ingestion logic
+    # cur.execute(...)
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+if __name__ == "__main__":
+    run_ingestion()
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -23,9 +45,9 @@ def ingest_customers(file_name):
 
     insert_query = """
     INSERT INTO core_customer
-    (customer_id, first_name, last_name, age, phone_number, monthly_income, approved_limit)
+    (id, first_name, last_name, age, phone_number, monthly_income, approved_limit)
     VALUES %s
-    ON CONFLICT (customer_id) DO NOTHING;
+    ON CONFLICT (id) DO NOTHING;
     """
 
     values = [
@@ -50,10 +72,10 @@ def ingest_loans(file_name):
 
     insert_query = """
     INSERT INTO core_loan
-    (loan_id, customer_id, loan_amount, tenure, interest_rate,
+    (id, customer_id, loan_amount, tenure, interest_rate,
      monthly_installment, emis_paid_on_time, start_date, end_date)
     VALUES %s
-    ON CONFLICT (loan_id) DO NOTHING;
+    ON CONFLICT (id) DO NOTHING;
     """
 
     values = [

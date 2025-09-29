@@ -10,4 +10,6 @@ opendb:
 dropdb:
 	docker exec -it postgres16 dropdb --username=root credit_approval
 
+
+
 .PHONY: createdb postgres dropdb
